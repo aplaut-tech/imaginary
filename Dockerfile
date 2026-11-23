@@ -1,9 +1,9 @@
-ARG GOLANG_VERSION=1.17
-FROM golang:${GOLANG_VERSION}-bullseye AS builder
+ARG GOLANG_VERSION=1.24
+FROM golang:${GOLANG_VERSION}-trixie AS builder
 
 ARG IMAGINARY_VERSION=dev
 ARG LIBVIPS_VERSION=8.12.2
-ARG GOLANGCILINT_VERSION=1.29.0
+ARG GOLANGCILINT_VERSION=1.64.8
 
 # Installs libvips + required libraries
 RUN DEBIAN_FRONTEND=noninteractive \
@@ -12,9 +12,9 @@ RUN DEBIAN_FRONTEND=noninteractive \
   ca-certificates \
   automake build-essential curl \
   gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg62-turbo-dev libpng-dev \
-  libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
+  libwebp-dev libtiff-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
   swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libheif-dev && \
+  libgsf-1-dev libfftw3-dev liborc-0.4-dev librsvg2-dev libimagequant-dev libheif-dev && \
   cd /tmp && \
   curl -fsSLO https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
   tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
@@ -59,7 +59,7 @@ RUN go build -a \
     -ldflags="-s -w -h -X main.Version=${IMAGINARY_VERSION}" \
     github.com/h2non/imaginary
 
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
 ARG IMAGINARY_VERSION
 
@@ -72,16 +72,16 @@ LABEL maintainer="tomas@aparicio.me" \
 
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /go/bin/imaginary /usr/local/bin/imaginary
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 
 # Install runtime dependencies
 RUN DEBIAN_FRONTEND=noninteractive \
   apt-get update && \
+  apt-get upgrade -y && \
   apt-get install --no-install-recommends -y \
-  procps libglib2.0-0 libjpeg62-turbo libpng16-16 libopenexr25 \
-  libwebp6 libwebpmux3 libwebpdemux2 libtiff5 libgif7 libexif12 libxml2 libpoppler-glib8 \
-  libmagickwand-6.q16-6 libpango1.0-0 libmatio11 libopenslide0 libjemalloc2 \
-  libgsf-1-114 fftw3 liborc-0.4-0 librsvg2-2 libcfitsio9 libimagequant0 libheif1 && \
+  ca-certificates procps libglib2.0-0t64 libjpeg62-turbo libpng16-16t64 libopenexr-3-1-30 \
+  libwebp7 libwebpmux3 libwebpdemux2 libtiff6 libgif7 libexif12 libxml2 libpoppler-glib8t64 \
+  libmagickwand-7.q16-10 libpango-1.0-0 libmatio13 libopenslide0 libjemalloc2 \
+  libgsf-1-114 libfftw3-double3 liborc-0.4-0t64 librsvg2-2 libcfitsio10t64 libimagequant0 libheif1 && \
   ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
   apt-get autoremove -y && \
   apt-get autoclean && \
