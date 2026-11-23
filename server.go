@@ -87,12 +87,10 @@ func Server(o ServerOptions) {
 	log.Print("Graceful shutdown")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		// extra handling here
-		cancel()
-	}()
+	err := server.Shutdown(ctx)
+	cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err != nil {
 		log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
 }
